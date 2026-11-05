@@ -37,10 +37,10 @@ CREATE TABLE IF NOT EXISTS usuarios (
 INSERT INTO roles (id, nombre, descripcion)
 VALUES
     (1, 'Superadmin', 'Acceso total al sistema'),
-    (2, 'Administrador', 'Administra los catálogos y la operación')
-ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
+    (2, 'Administrador', 'Administra los catálogos y la operación') AS nuevo
+ON DUPLICATE KEY UPDATE nombre = nuevo.nombre;
 
 -- Superadmin inicial: admin@streamstore.com / Admin123* (cambiar la contraseña después del primer inicio de sesión)
 INSERT INTO usuarios (id, nombre, correo, contrasenaHash, rolId)
-VALUES (1, 'Superadmin', 'admin@streamstore.com', '$2b$10$hWuCiQlhUU.ZqjakxB8Q0ezXQdugYYssHee7dW.mcb6gwWbYPK7hW', 1)
-ON DUPLICATE KEY UPDATE correo = VALUES(correo);
+VALUES (1, 'Superadmin', 'admin@streamstore.com', '$2b$10$hWuCiQlhUU.ZqjakxB8Q0ezXQdugYYssHee7dW.mcb6gwWbYPK7hW', 1) AS nuevo
+ON DUPLICATE KEY UPDATE correo = nuevo.correo;
