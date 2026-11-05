@@ -55,7 +55,7 @@ Base: `http://localhost:3000/api`
 | DELETE | `/carrito/:id` | Cliente. Quita un ítem |
 | DELETE | `/carrito` | Cliente. Vacía el carrito |
 | POST | `/compras` | Cliente. Checkout: crea la compra **pendiente** con los ítems y precios del carrito (valida stock). Cancela otra compra pendiente que tuviera |
-| POST | `/compras/:id/pagar` | Cliente. Pago simulado (`{ metodoPago }`: `tarjeta` por defecto, `pse` o `nequi`). En una transacción asigna cuentas y pantallas, crea un servicio por unidad, marca la compra pagada y vacía el carrito |
+| POST | `/compras/:id/pagar` | Cliente. Pago simulado (`{ metodoPago }`: `tarjeta` por defecto, `pse` o `nequi`). En una transacción asigna cuentas y pantallas, crea un servicio por unidad, marca la compra pagada y vacía el carrito. Después envía el correo de confirmación con el detalle del pedido (sin contraseñas); si el correo falla, el pago sigue siendo válido |
 | GET | `/compras/mias` | Cliente. Historial paginado; filtro `estado` (`pendiente`, `pagada`, `cancelada`) |
 | GET | `/compras/:id` | Cliente. Detalle de una compra con sus ítems y servicios |
 | GET | `/servicios/mios` | Cliente. Servicios de compras pagadas con plataforma, modalidad, credenciales descifradas (correo, contraseña y, si es pantalla, perfil y PIN), fecha de compra, vencimiento, `diasRestantes` y `estado` (`activo`, `por_vencer`, `vencido`). Filtro `estado`. Los vencidos van al final |
