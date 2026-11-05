@@ -3,7 +3,7 @@ import { CarritoItemRepository } from "../../repositories/carritoItems/CarritoIt
 import { ProductoRepository } from "../../repositories/productos/ProductoRepository"
 import { CarritoItemService } from "../../services/carritoItems/CarritoItemService"
 import { ApiResponse } from "../../utils/apiResponse"
-import { CreateCarritoItemInput, UpdateCarritoItemInput } from "../../validators/carritoItems/CarritoItemValidators"
+import { CreateCarritoItemInput, RenovarCarritoItemInput, UpdateCarritoItemInput } from "../../validators/carritoItems/CarritoItemValidators"
 import { IdParam } from "../../validators/CommonValidators"
 
 const service = new CarritoItemService(new CarritoItemRepository(), new ProductoRepository())
@@ -24,6 +24,15 @@ export class CarritoItemController {
             return creado
                 ? ApiResponse.created(res, "Producto agregado al carrito", carrito)
                 : ApiResponse.success(res, "Se actualizó la cantidad en el carrito", carrito)
+        } catch (error) {
+            return ApiResponse.error(res, error)
+        }
+    }
+
+    static async renovar(req: Request, res: Response): Promise<Response> {
+        try {
+            const carrito = await service.renovar(req.body as RenovarCarritoItemInput, req.user!.id)
+            return ApiResponse.created(res, "Renovación agregada al carrito", carrito)
         } catch (error) {
             return ApiResponse.error(res, error)
         }

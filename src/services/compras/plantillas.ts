@@ -7,7 +7,7 @@ import { Correo } from "../../utils/mailer"
 const METODOS: Record<string, string> = { tarjeta: "Tarjeta", pse: "PSE", nequi: "Nequi" }
 
 const describir = (item: CompraDetalle["items"][number]): string =>
-    `${item.producto.plataforma.nombre} · ${item.producto.tipo === "cuenta" ? "Cuenta completa" : "Pantalla"} · ${item.producto.duracionDias} días`
+    `${item.producto.plataforma.nombre} · ${item.producto.tipo === "cuenta" ? "Cuenta completa" : "Pantalla"} · ${item.producto.duracionDias} días${item.renovacionDe !== null ? " (renovación)" : ""}`
 
 export const correoConfirmacion = (compra: CompraDetalle, cliente: ClienteCompra, urlServicios: string): Correo => {
     const fecha = formatDateTime(compra.pagadaAt ?? compra.createdAt)

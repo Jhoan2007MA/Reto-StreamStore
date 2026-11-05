@@ -1,4 +1,4 @@
-import { TIPO_PRODUCTO } from "../../constants/estados"
+import { ESTADO_REGISTRO, TIPO_PRODUCTO } from "../../constants/estados"
 import { ServicioCliente } from "../../interfaces/Servicio"
 import { Servicio } from "../../models/Servicio"
 import { ServicioRepository } from "../../repositories/servicios/ServicioRepository"
@@ -59,7 +59,8 @@ export class ServicioService {
             fechaInicio: servicio.fechaInicio,
             fechaVencimiento,
             diasRestantes: Math.max(diasRestantes(fechaVencimiento, ahora), 0),
-            estado: estadoVencimiento(fechaVencimiento, ahora)
+            estado: estadoVencimiento(fechaVencimiento, ahora),
+            renovable: producto?.estado === ESTADO_REGISTRO.ACTIVO && plataforma?.estado === ESTADO_REGISTRO.ACTIVO
         }
     }
 }

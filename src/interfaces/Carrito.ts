@@ -14,6 +14,10 @@ export interface CarritoLinea {
         precio: number
         disponible: boolean
     }
+    renovacion: {
+        servicioId: number
+        fechaVencimiento: Date
+    } | null
     cantidad: number
     subtotal: number
     stock: number

@@ -25,4 +25,5 @@ export interface ServicioCliente {
     fechaVencimiento: Date
     diasRestantes: number
     estado: EstadoVencimiento
+    renovable: boolean
 }

@@ -11,5 +11,11 @@ export const updateCarritoItemSchema = z.object({
     cantidad: cantidadSchema
 })
 
+export const renovarCarritoItemSchema = z.object({
+    servicioId: z.number().int().positive(),
+    productoId: z.number().int().positive().optional()
+})
+
 export type CreateCarritoItemInput = z.infer<typeof createCarritoItemSchema>
 export type UpdateCarritoItemInput = z.infer<typeof updateCarritoItemSchema>
+export type RenovarCarritoItemInput = z.infer<typeof renovarCarritoItemSchema>

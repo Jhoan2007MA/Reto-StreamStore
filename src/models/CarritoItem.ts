@@ -1,12 +1,14 @@
 import { Optional } from "sequelize"
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript"
+import { BelongsTo, Column, Comment, DataType, ForeignKey, Model, Table } from "sequelize-typescript"
 import { Producto } from "./Producto"
+import { Servicio } from "./Servicio"
 import { User } from "./User"
 
 export interface CarritoItemAttributes {
     id: number
     usuarioId: number
     productoId: number
+    servicioId: number | null
     cantidad: number
     createdBy: number | null
     updatedBy: number | null
@@ -14,7 +16,7 @@ export interface CarritoItemAttributes {
     updatedAt: Date
 }
 
-export type CarritoItemCreationAttributes = Optional<CarritoItemAttributes, "id" | "createdBy" | "updatedBy" | "createdAt" | "updatedAt">
+export type CarritoItemCreationAttributes = Optional<CarritoItemAttributes, "id" | "servicioId" | "createdBy" | "updatedBy" | "createdAt" | "updatedAt">
 
 @Table({ tableName: "carritoItems", timestamps: true })
 export class CarritoItem extends Model<CarritoItemAttributes, CarritoItemCreationAttributes> {
@@ -28,6 +30,11 @@ export class CarritoItem extends Model<CarritoItemAttributes, CarritoItemCreatio
     @ForeignKey(() => Producto)
     @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: false })
     productoId!: number
+
+    @Comment("Servicio que se renueva; NULL si es compra nueva")
+    @ForeignKey(() => Servicio)
+    @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: true })
+    servicioId!: number | null
 
     @Column({ type: DataType.SMALLINT.UNSIGNED, allowNull: false, defaultValue: 1 })
     cantidad!: number
@@ -49,4 +56,7 @@ export class CarritoItem extends Model<CarritoItemAttributes, CarritoItemCreatio
 
     @BelongsTo(() => Producto, "productoId")
     producto?: Producto
+
+    @BelongsTo(() => Servicio, "servicioId")
+    servicio?: Servicio
 }

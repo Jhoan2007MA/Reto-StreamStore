@@ -24,6 +24,7 @@ export interface CompraItemDetalle {
         tipo: TipoProductoNombre
         duracionDias: number
     }
+    renovacionDe: number | null
     cantidad: number
     precioUnitario: number
     subtotal: number
