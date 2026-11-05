@@ -6,6 +6,7 @@ import CompraRoutes from "./compras/CompraRoutes"
 import CuentaRoutes from "./cuentas/CuentaRoutes"
 import PlataformaRoutes from "./plataformas/PlataformaRoutes"
 import ProductoRoutes from "./productos/ProductoRoutes"
+import ServicioRoutes from "./servicios/ServicioRoutes"
 
 const router = Router()
 
@@ -15,6 +16,7 @@ router.use("/plataformas", PlataformaRoutes)
 router.use("/productos", ProductoRoutes)
 router.use("/carrito", CarritoItemRoutes)
 router.use("/compras", CompraRoutes)
+router.use("/servicios", ServicioRoutes)
 router.use("/admin/cuentas", CuentaRoutes)
 
 export default router
