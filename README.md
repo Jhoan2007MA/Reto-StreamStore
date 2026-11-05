@@ -41,6 +41,11 @@ Base: `http://localhost:3000/api`
 | POST | `/auth/refresh` | Renueva la sesión con la cookie `refreshToken` |
 | POST | `/auth/logout` | Cierra la sesión y borra las cookies |
 | GET | `/auth/me` | Usuario autenticado (cookie o `Authorization: Bearer <token>`) |
+| GET | `/plataformas` | Plataformas activas (público) |
+| GET | `/productos` | Catálogo con stock (público). Filtros `plataforma` (id), `tipo` (`cuenta` o `pantalla`), `page`, `limit` |
+| GET | `/productos/:id` | Detalle de un producto con su stock (público) |
+
+El stock se calcula por plataforma y modalidad: **cuenta completa** = cuentas activas sin pantallas vendidas; **pantalla** = pantallas disponibles en cuentas activas que no estén vendidas completas. Con stock 0 el producto sale con `agotado: true`.
 
 Usuario inicial: `admin@streamstore.com` / `Admin123*`. Cámbialo después del primer inicio de sesión.
 
