@@ -45,6 +45,8 @@ Base: `http://localhost:3000/api`
 | POST | `/auth/refresh` | Renueva la sesión con la cookie `refreshToken` |
 | POST | `/auth/logout` | Cierra la sesión y borra las cookies |
 | GET | `/auth/me` | Usuario autenticado (cookie o `Authorization: Bearer <token>`) |
+| POST | `/auth/recuperar` | Pide el enlace para restablecer la contraseña (`{ correo }`). Siempre responde lo mismo, exista o no el correo. Máximo una solicitud por minuto por usuario |
+| POST | `/auth/restablecer` | Cambia la contraseña con el token del enlace (`{ token, contrasena }`). El enlace vence en 30 minutos, sirve una sola vez y cierra las sesiones abiertas |
 | GET | `/plataformas` | Plataformas activas (público) |
 | GET | `/productos` | Catálogo con stock (público). Filtros `plataforma` (id), `tipo` (`cuenta` o `pantalla`), `page`, `limit` |
 | GET | `/productos/:id` | Detalle de un producto con su stock (público) |
