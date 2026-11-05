@@ -2,10 +2,11 @@ import { Router } from "express"
 import { AuthController } from "../controllers/AuthController"
 import { AuthMiddleware } from "../middlewares/AuthMiddleware"
 import { validateSchema } from "../middlewares/ValidateSchema"
-import { loginSchema } from "../validators/AuthValidators"
+import { loginSchema, registerSchema } from "../validators/AuthValidators"
 
 const router = Router()
 
+router.post("/register", validateSchema(registerSchema), AuthController.register)
 router.post("/login", validateSchema(loginSchema), AuthController.login)
 router.post("/refresh", AuthController.refresh)
 router.post("/logout", AuthController.logout)

@@ -1,5 +1,5 @@
 import { Rol } from "../models/Rol"
-import { User } from "../models/User"
+import { User, UserCreationAttributes } from "../models/User"
 
 const rolInclude = { model: Rol, attributes: ["id", "nombre"] }
 
@@ -7,23 +7,33 @@ export class AuthRepository {
     findByCorreo(correo: string): Promise<User | null> {
         return User.findOne({
             where: { correo },
-            attributes: ["id", "nombre", "correo", "contrasenaHash", "rolId", "estado"],
+            attributes: ["id", "nombre", "correo", "telefono", "contrasenaHash", "rolId", "estado"],
             include: [rolInclude]
         })
     }
 
     findById(id: number): Promise<User | null> {
         return User.findByPk(id, {
-            attributes: ["id", "nombre", "correo", "rolId", "estado"],
+            attributes: ["id", "nombre", "correo", "telefono", "rolId", "estado"],
             include: [rolInclude]
         })
     }
 
     findRefreshTokenById(id: number): Promise<User | null> {
         return User.findByPk(id, {
-            attributes: ["id", "nombre", "correo", "rolId", "estado", "refreshToken"],
+            attributes: ["id", "nombre", "correo", "telefono", "rolId", "estado", "refreshToken"],
             include: [rolInclude]
         })
+    }
+
+    async existsByCorreo(correo: string): Promise<boolean> {
+        const count = await User.count({ where: { correo } })
+        return count > 0
+    }
+
+    async create(data: UserCreationAttributes): Promise<number> {
+        const user = await User.create(data)
+        return user.id
     }
 
     async updateRefreshToken(id: number, refreshToken: string | null): Promise<void> {

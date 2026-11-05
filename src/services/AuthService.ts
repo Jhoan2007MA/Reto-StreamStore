@@ -1,11 +1,12 @@
 import bcrypt from "bcrypt"
 import jwt, { SignOptions } from "jsonwebtoken"
 import { config } from "../config/config"
+import { ROLES } from "../constants/estados"
 import { AuthUser, TokenPayload } from "../interfaces/User"
 import { User } from "../models/User"
 import { AuthRepository } from "../repositories/AuthRepository"
 import { HttpError } from "../utils/httpError"
-import { LoginInput } from "../validators/AuthValidators"
+import { LoginInput, RegisterInput } from "../validators/AuthValidators"
 
 export interface AuthSession {
     accessToken: string
@@ -25,6 +26,22 @@ export class AuthService {
         const valid = user ? await bcrypt.compare(input.contrasena, user.contrasenaHash) : false
         if (!user || !valid) throw new HttpError("Correo o contraseña incorrectos", 401)
         this.ensureActive(user)
+        return this.createSession(user)
+    }
+
+    async register(input: RegisterInput): Promise<AuthSession> {
+        if (await this.repository.existsByCorreo(input.correo)) {
+            throw new HttpError("Ya existe una cuenta con ese correo", 409)
+        }
+        const id = await this.repository.create({
+            nombre: input.nombre,
+            correo: input.correo,
+            telefono: input.telefono ?? null,
+            contrasenaHash: input.contrasena,
+            rolId: ROLES.CLIENTE
+        })
+        const user = await this.repository.findById(id)
+        if (!user) throw new HttpError("No se pudo crear la cuenta", 500)
         return this.createSession(user)
     }
 
@@ -101,6 +118,7 @@ export class AuthService {
             id: user.id,
             nombre: user.nombre,
             correo: user.correo,
+            telefono: user.telefono,
             rolId: user.rolId,
             rol: user.rol?.nombre ?? ""
         }
