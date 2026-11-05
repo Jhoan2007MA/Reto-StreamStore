@@ -52,12 +52,18 @@ Base: `http://localhost:3000/api`
 | PATCH | `/carrito/:id` | Cliente. Cambia la cantidad de un ítem (`{ cantidad }`) |
 | DELETE | `/carrito/:id` | Cliente. Quita un ítem |
 | DELETE | `/carrito` | Cliente. Vacía el carrito |
+| POST | `/compras` | Cliente. Checkout: crea la compra **pendiente** con los ítems y precios del carrito (valida stock). Cancela otra compra pendiente que tuviera |
+| POST | `/compras/:id/pagar` | Cliente. Pago simulado (`{ metodoPago }`: `tarjeta` por defecto, `pse` o `nequi`). En una transacción asigna cuentas y pantallas, crea un servicio por unidad, marca la compra pagada y vacía el carrito |
+| GET | `/compras/mias` | Cliente. Historial paginado; filtro `estado` (`pendiente`, `pagada`, `cancelada`) |
+| GET | `/compras/:id` | Cliente. Detalle de una compra con sus ítems y servicios |
 | POST | `/admin/cuentas` | Admin. Carga una cuenta (`plataformaId`, `correoAcceso`, `contrasenaAcceso`); crea sus pantallas según `maxPantallas` de la plataforma con PIN aleatorio |
 | GET | `/admin/cuentas` | Admin. Inventario con estado de cada cuenta y sus pantallas. Filtros `plataforma` (id), `estado` (`disponible`, `parcial`, `vendida`, `inactiva`), `page`, `limit` |
 
 El stock se calcula por plataforma y modalidad: **cuenta completa** = cuentas activas sin pantallas vendidas; **pantalla** = pantallas disponibles en cuentas activas que no estén vendidas completas. Con stock 0 el producto sale con `agotado: true`.
 
 El carrito no aparta stock: valida al agregar y al cambiar cantidades, sumando los productos que comparten stock (misma plataforma y modalidad, distinta duración). Todas las rutas del carrito devuelven el carrito completo actualizado.
+
+El pago usa `SELECT ... FOR UPDATE` dentro de una transacción para que dos clientes nunca reciban la misma cuenta o pantalla. Asigna primero las cuentas completas y luego las pantallas, prefiriendo cuentas que ya tienen pantallas vendidas. Si falta stock de cualquier producto se deshace todo el pago y el error dice cuál se agotó; la compra queda pendiente y el carrito intacto para ajustarlo.
 
 Las contraseñas de las cuentas de streaming se guardan cifradas con AES-256-GCM y nunca se devuelven en el inventario; solo se descifran para el dueño del servicio.
 
