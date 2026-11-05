@@ -1,10 +1,11 @@
 import { DatabaseError, Op, QueryTypes, Transaction, WhereOptions } from "sequelize"
 import { sequelize } from "../../config/database"
-import { ESTADO_COMPRA, ESTADO_CUENTA, ESTADO_PANTALLA } from "../../constants/estados"
+import { ESTADO_COMPRA, ESTADO_CUENTA, ESTADO_PANTALLA, ESTADO_SERVICIO } from "../../constants/estados"
 import { CarritoItem } from "../../models/CarritoItem"
 import { Compra, CompraAttributes } from "../../models/Compra"
 import { CompraItem } from "../../models/CompraItem"
 import { Cuenta } from "../../models/Cuenta"
+import { Notificacion } from "../../models/Notificacion"
 import { Pantalla } from "../../models/Pantalla"
 import { Plataforma } from "../../models/Plataforma"
 import { Producto } from "../../models/Producto"
@@ -13,6 +14,7 @@ import { User } from "../../models/User"
 
 interface ItemNuevo {
     productoId: number
+    servicioId: number | null
     cantidad: number
     precioUnitario: string
     subtotal: string
@@ -91,7 +93,7 @@ export class CompraRepository {
     findItems(compraId: number, transaction: Transaction): Promise<CompraItem[]> {
         return CompraItem.findAll({
             where: { compraId },
-            attributes: ["id", "productoId", "cantidad"],
+            attributes: ["id", "productoId", "servicioId", "cantidad"],
             include: [productoInclude],
             order: [["id", "ASC"]],
             transaction
@@ -169,6 +171,23 @@ export class CompraRepository {
         )
     }
 
+    findServicioParaRenovar(id: number, usuarioId: number, transaction: Transaction): Promise<Servicio | null> {
+        return Servicio.findOne({
+            where: { id, usuarioId },
+            attributes: ["id", "fechaVencimiento"],
+            transaction,
+            lock: transaction.LOCK.UPDATE
+        })
+    }
+
+    async extenderServicio(id: number, fechaVencimiento: Date, usuarioId: number, transaction: Transaction): Promise<void> {
+        await Servicio.update(
+            { fechaVencimiento, estado: ESTADO_SERVICIO.ACTIVO, updatedBy: usuarioId },
+            { where: { id }, transaction }
+        )
+        await Notificacion.destroy({ where: { servicioId: id }, transaction })
+    }
+
     async createServicios(servicios: ServicioCreationAttributes[], transaction: Transaction): Promise<void> {
         await Servicio.bulkCreate(servicios, { transaction })
     }
@@ -230,10 +249,11 @@ export class CompraRepository {
             attributes: ["id", "usuarioId", "estado", "total", "metodoPago", "createdAt", "pagadaAt"],
             include: [{ model: User, attributes: ["id", "nombre", "correo"] }, {
                 model: CompraItem,
-                attributes: ["id", "productoId", "cantidad", "precioUnitario", "subtotal"],
+                attributes: ["id", "productoId", "servicioId", "cantidad", "precioUnitario", "subtotal"],
                 include: [
                     productoInclude,
-                    { model: Servicio, attributes: ["id", "fechaInicio", "fechaVencimiento"] }
+                    { model: Servicio, as: "servicios", attributes: ["id", "fechaInicio", "fechaVencimiento"] },
+                    { model: Servicio, as: "servicioRenovado", attributes: ["id", "fechaInicio", "fechaVencimiento"] }
                 ]
             }],
             order: [[{ model: CompraItem, as: "items" }, "id", "ASC"]]

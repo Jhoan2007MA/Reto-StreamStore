@@ -57,6 +57,7 @@ export class CompraService {
 
         const id = await this.repository.createConItems(usuarioId, carrito.total.toFixed(2), carrito.items.map((item) => ({
             productoId: item.producto.id,
+            servicioId: item.renovacion?.servicioId ?? null,
             cantidad: item.cantidad,
             precioUnitario: item.producto.precio.toFixed(2),
             subtotal: item.subtotal.toFixed(2)
@@ -161,10 +162,11 @@ export class CompraService {
                     tipo: item.producto?.tipo === TIPO_PRODUCTO.CUENTA ? "cuenta" : "pantalla",
                     duracionDias: item.producto?.duracionDias ?? 0
                 },
+                renovacionDe: item.servicioId,
                 cantidad: item.cantidad,
                 precioUnitario: Number(item.precioUnitario),
                 subtotal: Number(item.subtotal),
-                servicios: (item.servicios ?? []).map((servicio) => ({
+                servicios: [...(item.servicios ?? []), ...(item.servicioRenovado ? [item.servicioRenovado] : [])].map((servicio) => ({
                     id: servicio.id,
                     fechaInicio: servicio.fechaInicio,
                     fechaVencimiento: servicio.fechaVencimiento
@@ -176,6 +178,14 @@ export class CompraService {
     private async asignar(item: CompraItem, usuarioId: number, ahora: Date, transaction: Transaction): Promise<ServicioCreationAttributes[]> {
         const producto = item.producto
         if (!producto) throw new HttpError("Un producto de la compra ya no existe", 400)
+
+        if (item.servicioId !== null) {
+            const servicio = await this.repository.findServicioParaRenovar(item.servicioId, usuarioId, transaction)
+            if (!servicio) throw new HttpError("El servicio que intentas renovar ya no existe", 400, { productoId: item.productoId })
+            const desde = Math.max(new Date(servicio.fechaVencimiento).getTime(), ahora.getTime())
+            await this.repository.extenderServicio(servicio.id, new Date(desde + producto.duracionDias * DIA_MS), usuarioId, transaction)
+            return []
+        }
 
         const fechaVencimiento = new Date(ahora.getTime() + producto.duracionDias * DIA_MS)
         const base = {

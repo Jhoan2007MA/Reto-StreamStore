@@ -6,7 +6,7 @@ import { Producto } from "../../models/Producto"
 import { CarritoItemRepository } from "../../repositories/carritoItems/CarritoItemRepository"
 import { ProductoRepository } from "../../repositories/productos/ProductoRepository"
 import { HttpError } from "../../utils/httpError"
-import { CreateCarritoItemInput, UpdateCarritoItemInput } from "../../validators/carritoItems/CarritoItemValidators"
+import { CreateCarritoItemInput, RenovarCarritoItemInput, UpdateCarritoItemInput } from "../../validators/carritoItems/CarritoItemValidators"
 
 interface ProductoStock {
     plataformaId: number
@@ -42,7 +42,7 @@ export class CarritoItemService {
 
         const enCarrito = new Map<string, number>()
         for (const item of items) {
-            if (!item.producto) continue
+            if (!item.producto || item.servicioId !== null) continue
             const clave = claveStock(item.producto)
             enCarrito.set(clave, (enCarrito.get(clave) ?? 0) + item.cantidad)
         }
@@ -61,9 +61,9 @@ export class CarritoItemService {
         if (!producto) throw new HttpError("Producto no encontrado", 404)
 
         const items = await this.repository.findByUsuario(usuarioId)
-        const existente = items.find((item) => item.productoId === input.productoId)
+        const existente = items.find((item) => item.productoId === input.productoId && item.servicioId === null)
         const cantidad = (existente?.cantidad ?? 0) + input.cantidad
-        await this.validarStock(producto, cantidad, items.filter((item) => item.productoId !== input.productoId))
+        await this.validarStock(producto, cantidad, items.filter((item) => item.id !== existente?.id))
 
         if (existente) {
             await this.repository.updateCantidad(existente.id, cantidad, usuarioId)
@@ -76,6 +76,7 @@ export class CarritoItemService {
     async update(id: number, input: UpdateCarritoItemInput, usuarioId: number): Promise<CarritoResumen> {
         const item = await this.repository.findByIdUsuario(id, usuarioId)
         if (!item) throw new HttpError("El producto no está en tu carrito", 404)
+        if (item.servicioId !== null) throw new HttpError("La renovación de un servicio es de una sola unidad", 400)
 
         const producto = await this.productoRepository.findActivoById(item.productoId)
         if (!producto) throw new HttpError("Este producto ya no está disponible, quítalo del carrito", 400)
@@ -83,6 +84,26 @@ export class CarritoItemService {
         const items = await this.repository.findByUsuario(usuarioId)
         await this.validarStock(producto, input.cantidad, items.filter((otro) => otro.id !== id))
         await this.repository.updateCantidad(id, input.cantidad, usuarioId)
+        return this.get(usuarioId)
+    }
+
+    async renovar(input: RenovarCarritoItemInput, usuarioId: number): Promise<CarritoResumen> {
+        const servicio = await this.repository.findServicioDeUsuario(input.servicioId, usuarioId)
+        if (!servicio || !servicio.cuenta || !servicio.compraItem) throw new HttpError("Servicio no encontrado", 404)
+
+        const producto = await this.productoRepository.findActivoById(input.productoId ?? servicio.compraItem.productoId)
+        if (!producto) throw new HttpError("El producto para renovar este servicio ya no está disponible", 400)
+
+        const tipoServicio = servicio.pantallaId === null ? TIPO_PRODUCTO.CUENTA : TIPO_PRODUCTO.PANTALLA
+        if (producto.plataformaId !== servicio.cuenta.plataformaId || producto.tipo !== tipoServicio) {
+            throw new HttpError("Ese producto no corresponde a la plataforma y modalidad de este servicio", 400)
+        }
+
+        const items = await this.repository.findByUsuario(usuarioId)
+        if (items.some((item) => item.servicioId === servicio.id)) {
+            throw new HttpError("La renovación de este servicio ya está en tu carrito", 409)
+        }
+        await this.repository.create(usuarioId, producto.id, 1, servicio.id)
         return this.get(usuarioId)
     }
 
@@ -102,7 +123,7 @@ export class CarritoItemService {
         const stock = stockDe(producto, await this.productoRepository.stockPorPlataforma([producto.plataformaId]))
         const clave = claveStock(producto)
         const mismoStock = otrosItems
-            .filter((item) => item.producto && claveStock(item.producto) === clave)
+            .filter((item) => item.servicioId === null && item.producto && claveStock(item.producto) === clave)
             .reduce((suma, item) => suma + item.cantidad, 0)
 
         if (stock === 0) throw new HttpError(`${nombreProducto(producto)} está agotado`, 400)
@@ -121,6 +142,7 @@ export class CarritoItemService {
         const producto = item.producto
         const disponible = estaActivo(producto)
         const stockActual = producto && disponible ? stockDe(producto, stock) : 0
+        const esRenovacion = item.servicioId !== null
         const solicitado = producto ? enCarrito.get(claveStock(producto)) ?? item.cantidad : item.cantidad
         const precio = Number(producto?.precio ?? 0)
         return {
@@ -137,10 +159,13 @@ export class CarritoItemService {
                 precio,
                 disponible
             },
+            renovacion: esRenovacion && item.servicio
+                ? { servicioId: item.servicio.id, fechaVencimiento: item.servicio.fechaVencimiento }
+                : null,
             cantidad: item.cantidad,
             subtotal: precio * item.cantidad,
             stock: stockActual,
-            stockSuficiente: disponible && solicitado <= stockActual
+            stockSuficiente: disponible && (esRenovacion || solicitado <= stockActual)
         }
     }
 }

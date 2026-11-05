@@ -24,13 +24,13 @@ export class ServicioRepository {
                             where: { estado: ESTADO_COMPRA.PAGADA },
                             required: true
                         },
-                        { model: Producto, attributes: ["id", "tipo", "duracionDias"] }
+                        { model: Producto, attributes: ["id", "tipo", "duracionDias", "estado"] }
                     ]
                 },
                 {
                     model: Cuenta,
                     attributes: ["id", "correoAcceso", "contrasenaAcceso", "plataformaId"],
-                    include: [{ model: Plataforma, attributes: ["id", "nombre", "logoUrl"] }]
+                    include: [{ model: Plataforma, attributes: ["id", "nombre", "logoUrl", "estado"] }]
                 },
                 { model: Pantalla, attributes: ["id", "nombrePerfil", "pin"] }
             ],

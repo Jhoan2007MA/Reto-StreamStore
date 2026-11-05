@@ -51,6 +51,7 @@ Base: `http://localhost:3000/api`
 
 | GET | `/carrito` | Cliente. Ítems con subtotal, stock actual y `stockSuficiente`; además `total`, `cantidadTotal` (para el contador) y `puedePagar` |
 | POST | `/carrito` | Cliente. Agrega `{ productoId, cantidad }` (cantidad por defecto 1). Si el producto ya está, suma la cantidad |
+| POST | `/carrito/renovaciones` | Cliente. Agrega la renovación de un servicio suyo (`{ servicioId, productoId? }`). Por defecto usa el mismo producto; se puede elegir otro de la misma plataforma y modalidad (otra duración). Siempre 1 unidad y no consume stock |
 | PATCH | `/carrito/:id` | Cliente. Cambia la cantidad de un ítem (`{ cantidad }`) |
 | DELETE | `/carrito/:id` | Cliente. Quita un ítem |
 | DELETE | `/carrito` | Cliente. Vacía el carrito |
@@ -77,6 +78,8 @@ Base: `http://localhost:3000/api`
 | GET | `/admin/cuentas` | Admin. Inventario con estado de cada cuenta y sus pantallas. Filtros `plataforma` (id), `estado` (`disponible`, `parcial`, `vendida`, `inactiva`), `page`, `limit` |
 
 El stock se calcula por plataforma y modalidad: **cuenta completa** = cuentas activas sin pantallas vendidas; **pantalla** = pantallas disponibles en cuentas activas que no estén vendidas completas. Con stock 0 el producto sale con `agotado: true`.
+
+Renovación: al pagar, el servicio conserva su misma cuenta o pantalla y su vencimiento se extiende la duración del producto, contando desde el vencimiento actual (o desde hoy si ya venció). Se borran sus avisos enviados para que vuelva a recibir alertas. `/servicios/mios` trae `renovable` y el detalle de la compra trae `renovacionDe`.
 
 El carrito no aparta stock: valida al agregar y al cambiar cantidades, sumando los productos que comparten stock (misma plataforma y modalidad, distinta duración). Todas las rutas del carrito devuelven el carrito completo actualizado.
 
