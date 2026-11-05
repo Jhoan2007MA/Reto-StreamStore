@@ -1,3 +1,4 @@
+import { escapar } from "../../utils/html"
 import { Correo } from "../../utils/mailer"
 
 export interface DatosAviso {
@@ -9,9 +10,6 @@ export interface DatosAviso {
     dias: number
     urlRenovar: string
 }
-
-const escapar = (texto: string): string =>
-    texto.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[c] ?? c)
 
 const cuando = (dias: number): string => {
     if (dias <= 0) return "vence hoy"

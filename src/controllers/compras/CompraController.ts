@@ -5,12 +5,14 @@ import { ProductoRepository } from "../../repositories/productos/ProductoReposit
 import { CarritoItemService } from "../../services/carritoItems/CarritoItemService"
 import { CompraService } from "../../services/compras/CompraService"
 import { ApiResponse } from "../../utils/apiResponse"
+import { NodemailerMailer } from "../../utils/mailer"
 import { IdParam } from "../../validators/CommonValidators"
 import { ListCompraAdminQuery, ListCompraQuery, PagarCompraInput } from "../../validators/compras/CompraValidators"
 
 const service = new CompraService(
     new CompraRepository(),
-    new CarritoItemService(new CarritoItemRepository(), new ProductoRepository())
+    new CarritoItemService(new CarritoItemRepository(), new ProductoRepository()),
+    new NodemailerMailer()
 )
 
 export class CompraController {

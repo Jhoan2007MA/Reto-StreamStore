@@ -1,4 +1,5 @@
 import { Transaction } from "sequelize"
+import { config } from "../../config/config"
 import { ESTADO_COMPRA, ESTADO_SERVICIO, TIPO_PRODUCTO } from "../../constants/estados"
 import { ClienteCompra, CompraAdmin, CompraDetalleAdmin } from "../../interfaces/Admin"
 import { CompraDetalle, CompraResumen, EstadoCompraNombre } from "../../interfaces/Compra"
@@ -8,9 +9,12 @@ import { ServicioCreationAttributes } from "../../models/Servicio"
 import { CompraRepository } from "../../repositories/compras/CompraRepository"
 import { inicioDelDia, sumarDias } from "../../utils/fechas"
 import { HttpError } from "../../utils/httpError"
+import { logger } from "../../utils/logger"
+import { Mailer } from "../../utils/mailer"
 import { getOffset, pagination, PaginatedResult } from "../../utils/pagination"
 import { ListCompraAdminQuery, ListCompraQuery, PagarCompraInput } from "../../validators/compras/CompraValidators"
 import { CarritoItemService } from "../carritoItems/CarritoItemService"
+import { correoConfirmacion } from "./plantillas"
 
 const DIA_MS = 24 * 60 * 60 * 1000
 
@@ -30,7 +34,8 @@ const nombreProducto = (item: CompraItem): string =>
 export class CompraService {
     constructor(
         private readonly repository: CompraRepository,
-        private readonly carritoService: CarritoItemService
+        private readonly carritoService: CarritoItemService,
+        private readonly mailer: Mailer
     ) {}
 
     async checkout(usuarioId: number): Promise<CompraDetalle> {
@@ -81,7 +86,20 @@ export class CompraService {
             await this.repository.marcarPagada(id, input.metodoPago, ahora, usuarioId, transaction)
             await this.repository.vaciarCarrito(usuarioId, transaction)
         })
-        return this.getById(id, usuarioId)
+
+        const compra = await this.repository.findDetalle(id, usuarioId)
+        if (!compra) throw new HttpError("Compra no encontrada", 404)
+        const detalle = this.toDetalle(compra)
+        void this.enviarConfirmacion(detalle, this.toCliente(compra))
+        return detalle
+    }
+
+    private async enviarConfirmacion(compra: CompraDetalle, cliente: ClienteCompra): Promise<void> {
+        try {
+            await this.mailer.send(correoConfirmacion(compra, cliente, `${config.clientUrls[0] ?? ""}/mi-cuenta`))
+        } catch (error) {
+            logger.error(`No se pudo enviar la confirmación de la compra ${compra.id}: ${error instanceof Error ? error.message : String(error)}`)
+        }
     }
 
     async listMias(usuarioId: number, query: ListCompraQuery): Promise<PaginatedResult<CompraResumen>> {
