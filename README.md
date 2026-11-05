@@ -15,6 +15,7 @@ npm install
 cp .env.example .env
 mysql -u root -p < database/streamStoreDb.sql
 for f in database/migrations/*.sql; do mysql -u root -p < "$f"; done
+npm run seed
 npm run dev
 ```
 
@@ -28,6 +29,7 @@ Llena en `.env` al menos `DB_PASSWORD`, `JWT_SECRET`, `JWT_REFRESH_SECRET` y `CR
 | `npm run build` | Compila TypeScript a `dist/` |
 | `npm start` | Ejecuta `dist/server.js` |
 | `npm run type-check` | Verifica tipos sin compilar |
+| `npm run seed` | Carga los datos semilla (se puede correr varias veces sin duplicar) |
 
 ## Endpoints
 
@@ -52,7 +54,24 @@ El stock se calcula por plataforma y modalidad: **cuenta completa** = cuentas ac
 
 Las contraseñas de las cuentas de streaming se guardan cifradas con AES-256-GCM y nunca se devuelven en el inventario; solo se descifran para el dueño del servicio.
 
-Usuario inicial: `admin@streamstore.com` / `Admin123*`. Cámbialo después del primer inicio de sesión.
+## Datos semilla
+
+`npm run seed` carga datos ficticios para probar y para la demo:
+
+| Usuario | Contraseña | Rol |
+| --- | --- | --- |
+| `admin@streamstore.com` | `Admin123*` | Superadmin |
+| `cliente1@streamstore.com` | `Cliente123*` | Cliente |
+| `cliente2@streamstore.com` | `Cliente123*` | Cliente |
+
+- 4 plataformas: Netflix (5 pantallas), Disney+ (4), Prime Video (3) y Max (5).
+- 2 productos por plataforma (cuenta completa y pantalla) a 30 días.
+- 3 cuentas por plataforma con sus pantallas; correos `<plataforma><n>@demo.streamstore.test`.
+- `cliente1` tiene una pantalla de Netflix que vence en 3 días y una de Disney+ que vence en 1 día (para probar los correos).
+- `cliente2` tiene 2 pantallas de Max activas y una de Prime Video vencida.
+- Max cuenta completa queda con stock 1 (para probar la validación del carrito).
+
+Las fechas de vencimiento se calculan desde el día en que se corre la semilla.
 
 ## Estructura
 
