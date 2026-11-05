@@ -36,5 +36,6 @@ export const config = {
         refreshSecret: requiredInProduction("JWT_REFRESH_SECRET", "dev-refresh-secret"),
         accessExpiresIn: env("JWT_ACCESS_EXPIRES_IN", "8h"),
         refreshExpiresIn: env("JWT_REFRESH_EXPIRES_IN", "7d")
-    }
+    },
+    credentialsSecret: requiredInProduction("CREDENTIALS_SECRET", "dev-credentials-secret")
 }
