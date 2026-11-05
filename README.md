@@ -36,6 +36,7 @@ Base: `http://localhost:3000/api`
 | Método | Ruta | Descripción |
 | --- | --- | --- |
 | GET | `/health` | Estado del servidor y de la base de datos |
+| POST | `/auth/register` | Registra un cliente (`nombre`, `correo`, `telefono` opcional, `contrasena` de 8+ caracteres con letra y número) y deja la sesión iniciada |
 | POST | `/auth/login` | Inicia sesión (`correo`, `contrasena`); deja `accessToken` y `refreshToken` en cookies httpOnly |
 | POST | `/auth/refresh` | Renueva la sesión con la cookie `refreshToken` |
 | POST | `/auth/logout` | Cierra la sesión y borra las cookies |
@@ -54,6 +55,7 @@ src/services/      reglas de negocio
 src/repositories/  queries con Sequelize
 src/models/        tablas mapeadas con decoradores
 src/validators/    esquemas Zod
-src/middlewares/   auth, validación, 404 y errores
+src/middlewares/   auth, roles, validación, 404 y errores
+src/constants/     códigos de estado y roles
 src/utils/         respuestas, errores, paginación, logger y formatos
 ```

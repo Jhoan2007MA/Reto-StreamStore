@@ -3,7 +3,7 @@ import { config } from "../config/config"
 import { AuthRepository } from "../repositories/AuthRepository"
 import { AuthService, AuthSession } from "../services/AuthService"
 import { ApiResponse } from "../utils/apiResponse"
-import { LoginInput } from "../validators/AuthValidators"
+import { LoginInput, RegisterInput } from "../validators/AuthValidators"
 
 const service = new AuthService(new AuthRepository())
 
@@ -38,6 +38,19 @@ export class AuthController {
             const session = await service.login(req.body as LoginInput)
             setSessionCookies(res, session)
             return ApiResponse.success(res, `Bienvenido, ${session.user.nombre}`, {
+                accessToken: session.accessToken,
+                user: session.user
+            })
+        } catch (error) {
+            return ApiResponse.error(res, error)
+        }
+    }
+
+    static async register(req: Request, res: Response): Promise<Response> {
+        try {
+            const session = await service.register(req.body as RegisterInput)
+            setSessionCookies(res, session)
+            return ApiResponse.created(res, `Cuenta creada. Bienvenido, ${session.user.nombre}`, {
                 accessToken: session.accessToken,
                 user: session.user
             })
