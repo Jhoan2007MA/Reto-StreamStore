@@ -18,7 +18,7 @@ for f in database/migrations/*.sql; do mysql -u root -p < "$f"; done
 npm run dev
 ```
 
-Llena en `.env` al menos `DB_PASSWORD`, `JWT_SECRET` y `JWT_REFRESH_SECRET`. En producción los secretos JWT son obligatorios. `CLIENT_URL` acepta varias URL separadas por comas.
+Llena en `.env` al menos `DB_PASSWORD`, `JWT_SECRET`, `JWT_REFRESH_SECRET` y `CREDENTIALS_SECRET` (puedes generarlo con `openssl rand -hex 32`). En producción esos secretos son obligatorios. `CREDENTIALS_SECRET` cifra las contraseñas de las cuentas de streaming: si cambia, las ya guardadas no se pueden descifrar. `CLIENT_URL` acepta varias URL separadas por comas.
 
 ## Scripts
 
@@ -45,7 +45,12 @@ Base: `http://localhost:3000/api`
 | GET | `/productos` | Catálogo con stock (público). Filtros `plataforma` (id), `tipo` (`cuenta` o `pantalla`), `page`, `limit` |
 | GET | `/productos/:id` | Detalle de un producto con su stock (público) |
 
+| POST | `/admin/cuentas` | Admin. Carga una cuenta (`plataformaId`, `correoAcceso`, `contrasenaAcceso`); crea sus pantallas según `maxPantallas` de la plataforma con PIN aleatorio |
+| GET | `/admin/cuentas` | Admin. Inventario con estado de cada cuenta y sus pantallas. Filtros `plataforma` (id), `estado` (`disponible`, `parcial`, `vendida`, `inactiva`), `page`, `limit` |
+
 El stock se calcula por plataforma y modalidad: **cuenta completa** = cuentas activas sin pantallas vendidas; **pantalla** = pantallas disponibles en cuentas activas que no estén vendidas completas. Con stock 0 el producto sale con `agotado: true`.
+
+Las contraseñas de las cuentas de streaming se guardan cifradas con AES-256-GCM y nunca se devuelven en el inventario; solo se descifran para el dueño del servicio.
 
 Usuario inicial: `admin@streamstore.com` / `Admin123*`. Cámbialo después del primer inicio de sesión.
 
