@@ -37,5 +37,16 @@ export const config = {
         accessExpiresIn: env("JWT_ACCESS_EXPIRES_IN", "8h"),
         refreshExpiresIn: env("JWT_REFRESH_EXPIRES_IN", "7d")
     },
-    credentialsSecret: requiredInProduction("CREDENTIALS_SECRET", "dev-credentials-secret")
+    credentialsSecret: requiredInProduction("CREDENTIALS_SECRET", "dev-credentials-secret"),
+    mail: {
+        host: env("MAIL_HOST", "sandbox.smtp.mailtrap.io"),
+        port: Number(env("MAIL_PORT", "2525")),
+        user: env("MAIL_USER"),
+        pass: env("MAIL_PASS"),
+        from: env("MAIL_FROM", "StreamStore <no-reply@streamstore.com>")
+    },
+    cron: {
+        enabled: env("CRON_ENABLED", "true") === "true",
+        vencimientos: env("CRON_VENCIMIENTOS", "0 8 * * *")
+    }
 }

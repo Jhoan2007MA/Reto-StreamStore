@@ -19,7 +19,9 @@ npm run seed
 npm run dev
 ```
 
-Llena en `.env` al menos `DB_PASSWORD`, `JWT_SECRET`, `JWT_REFRESH_SECRET` y `CREDENTIALS_SECRET` (puedes generarlo con `openssl rand -hex 32`). En producción esos secretos son obligatorios. `CREDENTIALS_SECRET` cifra las contraseñas de las cuentas de streaming: si cambia, las ya guardadas no se pueden descifrar. `CLIENT_URL` acepta varias URL separadas por comas.
+Llena en `.env` al menos `DB_PASSWORD`, `JWT_SECRET`, `JWT_REFRESH_SECRET` y `CREDENTIALS_SECRET` (puedes generarlo con `openssl rand -hex 32`). En producción esos secretos son obligatorios. `CREDENTIALS_SECRET` cifra las contraseñas de las cuentas de streaming: si cambia, las ya guardadas no se pueden descifrar.
+
+Para los correos llena `MAIL_USER` y `MAIL_PASS` con las credenciales SMTP de tu inbox de [Mailtrap](https://mailtrap.io) (Email Testing → Inboxes → SMTP). `MAIL_HOST` y `MAIL_PORT` ya traen los valores del sandbox. `CRON_VENCIMIENTOS` es la expresión de node-cron (por defecto `0 8 * * *`, todos los días a las 8:00 en `APP_TIMEZONE`) y `CRON_ENABLED=false` la desactiva. `CLIENT_URL` acepta varias URL separadas por comas.
 
 ## Scripts
 
@@ -57,6 +59,7 @@ Base: `http://localhost:3000/api`
 | GET | `/compras/mias` | Cliente. Historial paginado; filtro `estado` (`pendiente`, `pagada`, `cancelada`) |
 | GET | `/compras/:id` | Cliente. Detalle de una compra con sus ítems y servicios |
 | GET | `/servicios/mios` | Cliente. Servicios de compras pagadas con plataforma, modalidad, credenciales descifradas (correo, contraseña y, si es pantalla, perfil y PIN), fecha de compra, vencimiento, `diasRestantes` y `estado` (`activo`, `por_vencer`, `vencido`). Filtro `estado`. Los vencidos van al final |
+| POST | `/admin/cron/ejecutar` | Admin. Ejecuta a mano la revisión de vencimientos (para la demo) y devuelve qué correos se enviaron, cuáles fallaron y cuántos servicios se marcaron vencidos |
 | POST | `/admin/cuentas` | Admin. Carga una cuenta (`plataformaId`, `correoAcceso`, `contrasenaAcceso`); crea sus pantallas según `maxPantallas` de la plataforma con PIN aleatorio |
 | GET | `/admin/cuentas` | Admin. Inventario con estado de cada cuenta y sus pantallas. Filtros `plataforma` (id), `estado` (`disponible`, `parcial`, `vendida`, `inactiva`), `page`, `limit` |
 
@@ -67,6 +70,8 @@ El carrito no aparta stock: valida al agregar y al cambiar cantidades, sumando l
 El pago usa `SELECT ... FOR UPDATE` dentro de una transacción para que dos clientes nunca reciban la misma cuenta o pantalla. Asigna primero las cuentas completas y luego las pantallas, prefiriendo cuentas que ya tienen pantallas vendidas. Si falta stock de cualquier producto se deshace todo el pago y el error dice cuál se agotó; la compra queda pendiente y el carrito intacto para ajustarlo.
 
 Las contraseñas de las cuentas de streaming se guardan cifradas con AES-256-GCM y nunca se devuelven en el inventario; solo se descifran para el dueño del servicio en `/servicios/mios`.
+
+Alertas por correo: todos los días la tarea busca servicios activos de compras pagadas y envía un aviso cuando faltan **3 días**, **1 día** o **el mismo día** del vencimiento. Cada aviso se registra en `notificaciones` (único por servicio y tipo), así que no se repite; si el envío falla no se registra y se reintenta en la siguiente revisión. Al final marca como vencidos los servicios cuya fecha ya pasó.
 
 Estado de un servicio (días contados por fecha en `APP_TIMEZONE`): **activo** si faltan más de 3 días, **por_vencer** si faltan 3 o menos (incluye el mismo día antes de la hora de vencimiento) y **vencido** si la fecha ya pasó.
 
