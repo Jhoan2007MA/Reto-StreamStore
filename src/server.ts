@@ -6,6 +6,7 @@ import express from "express"
 import morgan from "morgan"
 import { config } from "./config/config"
 import { sequelize } from "./config/database"
+import { iniciarJobVencimientos } from "./jobs/vencimientosJob"
 import { ErrorMiddleware } from "./middlewares/ErrorMiddleware"
 import { NotFoundMiddleware } from "./middlewares/NotFoundMiddleware"
 import routes from "./routes"
@@ -35,6 +36,7 @@ const start = async (): Promise<void> => {
 
     const server = app.listen(config.port, () => {
         logger.info(`API en http://localhost:${config.port}/api`)
+        iniciarJobVencimientos()
     })
 
     const shutdown = (signal: string): void => {
