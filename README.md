@@ -47,10 +47,17 @@ Base: `http://localhost:3000/api`
 | GET | `/productos` | Catálogo con stock (público). Filtros `plataforma` (id), `tipo` (`cuenta` o `pantalla`), `page`, `limit` |
 | GET | `/productos/:id` | Detalle de un producto con su stock (público) |
 
+| GET | `/carrito` | Cliente. Ítems con subtotal, stock actual y `stockSuficiente`; además `total`, `cantidadTotal` (para el contador) y `puedePagar` |
+| POST | `/carrito` | Cliente. Agrega `{ productoId, cantidad }` (cantidad por defecto 1). Si el producto ya está, suma la cantidad |
+| PATCH | `/carrito/:id` | Cliente. Cambia la cantidad de un ítem (`{ cantidad }`) |
+| DELETE | `/carrito/:id` | Cliente. Quita un ítem |
+| DELETE | `/carrito` | Cliente. Vacía el carrito |
 | POST | `/admin/cuentas` | Admin. Carga una cuenta (`plataformaId`, `correoAcceso`, `contrasenaAcceso`); crea sus pantallas según `maxPantallas` de la plataforma con PIN aleatorio |
 | GET | `/admin/cuentas` | Admin. Inventario con estado de cada cuenta y sus pantallas. Filtros `plataforma` (id), `estado` (`disponible`, `parcial`, `vendida`, `inactiva`), `page`, `limit` |
 
 El stock se calcula por plataforma y modalidad: **cuenta completa** = cuentas activas sin pantallas vendidas; **pantalla** = pantallas disponibles en cuentas activas que no estén vendidas completas. Con stock 0 el producto sale con `agotado: true`.
+
+El carrito no aparta stock: valida al agregar y al cambiar cantidades, sumando los productos que comparten stock (misma plataforma y modalidad, distinta duración). Todas las rutas del carrito devuelven el carrito completo actualizado.
 
 Las contraseñas de las cuentas de streaming se guardan cifradas con AES-256-GCM y nunca se devuelven en el inventario; solo se descifran para el dueño del servicio.
 
