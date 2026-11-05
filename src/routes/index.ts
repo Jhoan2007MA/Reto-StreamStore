@@ -1,6 +1,7 @@
 import { Router } from "express"
 import { HealthController } from "../controllers/HealthController"
 import AuthRoutes from "./AuthRoutes"
+import DocsRoutes from "./DocsRoutes"
 import CarritoItemRoutes from "./carritoItems/CarritoItemRoutes"
 import CompraAdminRoutes from "./compras/CompraAdminRoutes"
 import CompraRoutes from "./compras/CompraRoutes"
@@ -16,6 +17,7 @@ import ServicioRoutes from "./servicios/ServicioRoutes"
 const router = Router()
 
 router.get("/health", HealthController.check)
+router.use(DocsRoutes)
 router.use("/auth", AuthRoutes)
 router.use("/plataformas", PlataformaRoutes)
 router.use("/productos", ProductoRoutes)
