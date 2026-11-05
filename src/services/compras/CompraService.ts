@@ -1,13 +1,15 @@
 import { Transaction } from "sequelize"
 import { ESTADO_COMPRA, ESTADO_SERVICIO, TIPO_PRODUCTO } from "../../constants/estados"
+import { ClienteCompra, CompraAdmin, CompraDetalleAdmin } from "../../interfaces/Admin"
 import { CompraDetalle, CompraResumen, EstadoCompraNombre } from "../../interfaces/Compra"
 import { Compra } from "../../models/Compra"
 import { CompraItem } from "../../models/CompraItem"
 import { ServicioCreationAttributes } from "../../models/Servicio"
 import { CompraRepository } from "../../repositories/compras/CompraRepository"
+import { inicioDelDia, sumarDias } from "../../utils/fechas"
 import { HttpError } from "../../utils/httpError"
 import { getOffset, pagination, PaginatedResult } from "../../utils/pagination"
-import { ListCompraQuery, PagarCompraInput } from "../../validators/compras/CompraValidators"
+import { ListCompraAdminQuery, ListCompraQuery, PagarCompraInput } from "../../validators/compras/CompraValidators"
 import { CarritoItemService } from "../carritoItems/CarritoItemService"
 
 const DIA_MS = 24 * 60 * 60 * 1000
@@ -93,9 +95,40 @@ export class CompraService {
         return pagination({ count: result.count, rows }, query.limit, query.page)
     }
 
+    async listAdmin(query: ListCompraAdminQuery): Promise<PaginatedResult<CompraAdmin>> {
+        const result = await this.repository.findAndCountAdmin({
+            estado: query.estado ? ESTADO_POR_NOMBRE[query.estado] : undefined,
+            cliente: query.cliente,
+            desde: query.desde ? inicioDelDia(query.desde) : undefined,
+            hasta: query.hasta ? inicioDelDia(sumarDias(query.hasta, 1)) : undefined,
+            limit: query.limit,
+            offset: getOffset(query.limit, query.page)
+        })
+        const rows = result.rows.map((compra) => ({ ...this.toResumen(compra), cliente: this.toCliente(compra) }))
+        return pagination({ count: result.count, rows }, query.limit, query.page)
+    }
+
+    async getByIdAdmin(id: number): Promise<CompraDetalleAdmin> {
+        const compra = await this.repository.findDetalle(id)
+        if (!compra) throw new HttpError("Compra no encontrada", 404)
+        return { ...this.toDetalle(compra), cliente: this.toCliente(compra) }
+    }
+
     async getById(id: number, usuarioId: number): Promise<CompraDetalle> {
         const compra = await this.repository.findDetalle(id, usuarioId)
         if (!compra) throw new HttpError("Compra no encontrada", 404)
+        return this.toDetalle(compra)
+    }
+
+    private toCliente(compra: Compra): ClienteCompra {
+        return {
+            id: compra.usuario?.id ?? compra.usuarioId,
+            nombre: compra.usuario?.nombre ?? "",
+            correo: compra.usuario?.correo ?? ""
+        }
+    }
+
+    private toDetalle(compra: Compra): CompraDetalle {
         return {
             ...this.toResumen(compra),
             items: (compra.items ?? []).map((item) => ({

@@ -1,9 +1,10 @@
-import { QueryTypes, WhereOptions } from "sequelize"
+import { Op, QueryTypes, WhereOptions } from "sequelize"
 import { sequelize } from "../../config/database"
 import { ESTADO_CUENTA, ESTADO_PANTALLA, ESTADO_REGISTRO } from "../../constants/estados"
 import { StockPlataforma } from "../../interfaces/Catalogo"
 import { Plataforma } from "../../models/Plataforma"
-import { Producto, ProductoAttributes } from "../../models/Producto"
+import { CompraItem } from "../../models/CompraItem"
+import { Producto, ProductoAttributes, ProductoCreationAttributes } from "../../models/Producto"
 
 interface FiltrosProducto {
     plataformaId?: number
@@ -11,6 +12,20 @@ interface FiltrosProducto {
     limit: number
     offset: number
 }
+
+interface FiltrosProductoAdmin extends FiltrosProducto {
+    estado?: number
+}
+
+interface CombinacionProducto {
+    plataformaId: number
+    tipo: number
+    duracionDias: number
+}
+
+const adminInclude = { model: Plataforma, attributes: ["id", "nombre", "estado"] }
+
+const adminAttributes = ["id", "plataformaId", "tipo", "duracionDias", "precio", "estado", "createdAt", "updatedAt"]
 
 interface StockRow {
     plataformaId: number
@@ -71,6 +86,50 @@ export class ProductoRepository {
             attributes: ["id", "plataformaId", "tipo", "duracionDias", "precio"],
             include: [plataformaInclude]
         })
+    }
+
+    findAndCountAdmin(filtros: FiltrosProductoAdmin): Promise<{ count: number, rows: Producto[] }> {
+        const where: WhereOptions<ProductoAttributes> = {}
+        if (filtros.plataformaId !== undefined) where.plataformaId = filtros.plataformaId
+        if (filtros.tipo !== undefined) where.tipo = filtros.tipo
+        if (filtros.estado !== undefined) where.estado = filtros.estado
+        return Producto.findAndCountAll({
+            where,
+            attributes: adminAttributes,
+            include: [adminInclude],
+            order: [[{ model: Plataforma, as: "plataforma" }, "nombre", "ASC"], ["tipo", "ASC"], ["duracionDias", "ASC"]],
+            limit: filtros.limit,
+            offset: filtros.offset
+        })
+    }
+
+    findById(id: number): Promise<Producto | null> {
+        return Producto.findByPk(id, { attributes: adminAttributes, include: [adminInclude] })
+    }
+
+    findPlataforma(id: number): Promise<Plataforma | null> {
+        return Plataforma.findByPk(id, { attributes: ["id", "nombre", "estado"] })
+    }
+
+    async existsCombinacion(combinacion: CombinacionProducto, excluirId?: number): Promise<boolean> {
+        const where: WhereOptions<ProductoAttributes> = { ...combinacion }
+        if (excluirId !== undefined) where.id = { [Op.ne]: excluirId }
+        const count = await Producto.count({ where })
+        return count > 0
+    }
+
+    async tieneVentas(id: number): Promise<boolean> {
+        const count = await CompraItem.count({ where: { productoId: id } })
+        return count > 0
+    }
+
+    async create(data: ProductoCreationAttributes): Promise<number> {
+        const producto = await Producto.create(data)
+        return producto.id
+    }
+
+    async update(id: number, data: Partial<ProductoAttributes>): Promise<void> {
+        await Producto.update(data, { where: { id } })
     }
 
     async stockPorPlataforma(plataformaIds: number[]): Promise<Map<number, StockPlataforma>> {
