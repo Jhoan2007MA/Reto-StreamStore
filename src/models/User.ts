@@ -7,6 +7,7 @@ export interface UserAttributes {
     id: number
     nombre: string
     correo: string
+    telefono: string | null
     contrasenaHash: string
     rolId: number
     estado: number
@@ -17,7 +18,7 @@ export interface UserAttributes {
     updatedAt: Date
 }
 
-export type UserCreationAttributes = Optional<UserAttributes, "id" | "estado" | "refreshToken" | "createdBy" | "updatedBy" | "createdAt" | "updatedAt">
+export type UserCreationAttributes = Optional<UserAttributes, "id" | "telefono" | "estado" | "refreshToken" | "createdBy" | "updatedBy" | "createdAt" | "updatedAt">
 
 @Table({ tableName: "usuarios", timestamps: true })
 export class User extends Model<UserAttributes, UserCreationAttributes> {
@@ -29,6 +30,9 @@ export class User extends Model<UserAttributes, UserCreationAttributes> {
 
     @Column({ type: DataType.STRING(150), allowNull: false, unique: true })
     correo!: string
+
+    @Column({ type: DataType.STRING(20), allowNull: true })
+    telefono!: string | null
 
     @Column({ type: DataType.STRING(255), allowNull: false })
     contrasenaHash!: string

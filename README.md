@@ -14,6 +14,7 @@ nvm use
 npm install
 cp .env.example .env
 mysql -u root -p < database/streamStoreDb.sql
+for f in database/migrations/*.sql; do mysql -u root -p < "$f"; done
 npm run dev
 ```
 
