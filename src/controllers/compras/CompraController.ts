@@ -6,7 +6,7 @@ import { CarritoItemService } from "../../services/carritoItems/CarritoItemServi
 import { CompraService } from "../../services/compras/CompraService"
 import { ApiResponse } from "../../utils/apiResponse"
 import { IdParam } from "../../validators/CommonValidators"
-import { ListCompraQuery, PagarCompraInput } from "../../validators/compras/CompraValidators"
+import { ListCompraAdminQuery, ListCompraQuery, PagarCompraInput } from "../../validators/compras/CompraValidators"
 
 const service = new CompraService(
     new CompraRepository(),
@@ -47,6 +47,25 @@ export class CompraController {
             const { id } = res.locals.params as IdParam
             const compra = await service.getById(id, req.user!.id)
             return ApiResponse.success(res, "Detalle de la compra", compra)
+        } catch (error) {
+            return ApiResponse.error(res, error)
+        }
+    }
+
+    static async listAdmin(_req: Request, res: Response): Promise<Response> {
+        try {
+            const compras = await service.listAdmin(res.locals.query as ListCompraAdminQuery)
+            return ApiResponse.success(res, "Ventas", compras)
+        } catch (error) {
+            return ApiResponse.error(res, error)
+        }
+    }
+
+    static async getByIdAdmin(_req: Request, res: Response): Promise<Response> {
+        try {
+            const { id } = res.locals.params as IdParam
+            const compra = await service.getByIdAdmin(id)
+            return ApiResponse.success(res, "Detalle de la venta", compra)
         } catch (error) {
             return ApiResponse.error(res, error)
         }

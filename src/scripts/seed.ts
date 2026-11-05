@@ -132,14 +132,17 @@ const seedCompra = async (
         const total = lineas.reduce((suma, { producto }) => suma + Number(producto.precio), 0)
         const fechaInicioMasAntigua = Math.min(...servicios.map((servicio) => ahora - (DURACION - servicio.diasRestantes) * DIA_MS))
 
+        const fechaCompra = new Date(fechaInicioMasAntigua)
         const compra = await Compra.create({
             usuarioId,
             total: total.toFixed(2),
             estado: ESTADO_COMPRA.PAGADA,
             metodoPago: METODO_SEMILLA,
-            pagadaAt: new Date(fechaInicioMasAntigua),
+            pagadaAt: fechaCompra,
             createdBy: usuarioId,
-            updatedBy: usuarioId
+            updatedBy: usuarioId,
+            createdAt: fechaCompra,
+            updatedAt: fechaCompra
         }, { transaction })
 
         for (const { servicio, producto } of lineas) {
@@ -150,7 +153,9 @@ const seedCompra = async (
                 precioUnitario: producto.precio,
                 subtotal: producto.precio,
                 createdBy: usuarioId,
-                updatedBy: usuarioId
+                updatedBy: usuarioId,
+                createdAt: fechaCompra,
+                updatedAt: fechaCompra
             }, { transaction })
             const { cuentaId, pantallaId } = await asignarPantalla(servicio.slug, servicio.cuentaNumero, transaction)
             const fechaInicio = new Date(ahora - (DURACION - servicio.diasRestantes) * DIA_MS)
@@ -163,7 +168,9 @@ const seedCompra = async (
                 fechaVencimiento: new Date(fechaInicio.getTime() + DURACION * DIA_MS),
                 estado: servicio.diasRestantes < 0 ? ESTADO_SERVICIO.VENCIDO : ESTADO_SERVICIO.ACTIVO,
                 createdBy: usuarioId,
-                updatedBy: usuarioId
+                updatedBy: usuarioId,
+                createdAt: fechaInicio,
+                updatedAt: fechaInicio
             }, { transaction })
         }
     })

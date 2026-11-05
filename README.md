@@ -60,6 +60,19 @@ Base: `http://localhost:3000/api`
 | GET | `/compras/:id` | Cliente. Detalle de una compra con sus ítems y servicios |
 | GET | `/servicios/mios` | Cliente. Servicios de compras pagadas con plataforma, modalidad, credenciales descifradas (correo, contraseña y, si es pantalla, perfil y PIN), fecha de compra, vencimiento, `diasRestantes` y `estado` (`activo`, `por_vencer`, `vencido`). Filtro `estado`. Los vencidos van al final |
 | POST | `/admin/cron/ejecutar` | Admin. Ejecuta a mano la revisión de vencimientos (para la demo) y devuelve qué correos se enviaron, cuáles fallaron y cuántos servicios se marcaron vencidos |
+| GET | `/admin/plataformas` | Admin. Todas las plataformas con stock. Filtros `estado` (0/1), `buscar`, `page`, `limit` |
+| POST | `/admin/plataformas` | Admin. Crea (`nombre`, `descripcion`, `logoUrl`, `maxPantallas` 1-10) |
+| GET | `/admin/plataformas/:id` | Admin. Detalle con stock |
+| PATCH | `/admin/plataformas/:id` | Admin. Actualiza uno o varios campos. `maxPantallas` aplica a las cuentas que se carguen después |
+| PATCH | `/admin/plataformas/:id/estado` | Admin. Activa o inactiva (`{ estado: 0 \| 1 }`); inactiva la saca del catálogo |
+| GET | `/admin/productos` | Admin. Todos los productos con stock. Filtros `plataforma`, `tipo`, `estado`, `page`, `limit` |
+| POST | `/admin/productos` | Admin. Crea (`plataformaId`, `tipo`, `duracionDias`, `precio`) |
+| GET | `/admin/productos/:id` | Admin. Detalle con stock |
+| PATCH | `/admin/productos/:id` | Admin. Actualiza. Si ya tiene ventas no se puede cambiar su plataforma ni su modalidad (sí el precio y la duración) |
+| PATCH | `/admin/productos/:id/estado` | Admin. Activa o inactiva |
+| GET | `/admin/compras` | Admin. Ventas con cliente. Filtros `estado`, `cliente` (nombre o correo), `desde` y `hasta` (`AAAA-MM-DD`, fecha de creación), `page`, `limit` |
+| GET | `/admin/compras/:id` | Admin. Detalle de cualquier compra con su cliente |
+| GET | `/admin/resumen` | Admin. Ventas pagadas del día y del mes, stock y estado de cuentas por plataforma, servicios activos / por vencer / vencidos y total de clientes |
 | POST | `/admin/cuentas` | Admin. Carga una cuenta (`plataformaId`, `correoAcceso`, `contrasenaAcceso`); crea sus pantallas según `maxPantallas` de la plataforma con PIN aleatorio |
 | GET | `/admin/cuentas` | Admin. Inventario con estado de cada cuenta y sus pantallas. Filtros `plataforma` (id), `estado` (`disponible`, `parcial`, `vendida`, `inactiva`), `page`, `limit` |
 

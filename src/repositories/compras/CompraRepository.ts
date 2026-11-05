@@ -1,4 +1,4 @@
-import { DatabaseError, QueryTypes, Transaction, WhereOptions } from "sequelize"
+import { DatabaseError, Op, QueryTypes, Transaction, WhereOptions } from "sequelize"
 import { sequelize } from "../../config/database"
 import { ESTADO_COMPRA, ESTADO_CUENTA, ESTADO_PANTALLA } from "../../constants/estados"
 import { CarritoItem } from "../../models/CarritoItem"
@@ -9,6 +9,7 @@ import { Pantalla } from "../../models/Pantalla"
 import { Plataforma } from "../../models/Plataforma"
 import { Producto } from "../../models/Producto"
 import { Servicio, ServicioCreationAttributes } from "../../models/Servicio"
+import { User } from "../../models/User"
 
 interface ItemNuevo {
     productoId: number
@@ -20,6 +21,15 @@ interface ItemNuevo {
 interface FiltrosCompra {
     usuarioId: number
     estado?: number
+    limit: number
+    offset: number
+}
+
+interface FiltrosCompraAdmin {
+    estado?: number
+    cliente?: string
+    desde?: Date
+    hasta?: Date
     limit: number
     offset: number
 }
@@ -188,11 +198,37 @@ export class CompraRepository {
         })
     }
 
-    findDetalle(id: number, usuarioId: number): Promise<Compra | null> {
+    findAndCountAdmin(filtros: FiltrosCompraAdmin): Promise<{ count: number, rows: Compra[] }> {
+        const where: WhereOptions<CompraAttributes> = {}
+        if (filtros.estado !== undefined) where.estado = filtros.estado
+        if (filtros.desde || filtros.hasta) {
+            where.createdAt = {
+                ...(filtros.desde ? { [Op.gte]: filtros.desde } : {}),
+                ...(filtros.hasta ? { [Op.lt]: filtros.hasta } : {})
+            }
+        }
+        const usuarioWhere = filtros.cliente
+            ? { [Op.or]: [{ nombre: { [Op.like]: `%${filtros.cliente}%` } }, { correo: { [Op.like]: `%${filtros.cliente}%` } }] }
+            : undefined
+        return Compra.findAndCountAll({
+            where,
+            attributes: ["id", "usuarioId", "estado", "total", "metodoPago", "createdAt", "pagadaAt"],
+            include: [
+                { model: User, attributes: ["id", "nombre", "correo"], where: usuarioWhere, required: true },
+                { model: CompraItem, attributes: ["id", "cantidad"] }
+            ],
+            order: [["createdAt", "DESC"], ["id", "DESC"]],
+            limit: filtros.limit,
+            offset: filtros.offset,
+            distinct: true
+        })
+    }
+
+    findDetalle(id: number, usuarioId?: number): Promise<Compra | null> {
         return Compra.findOne({
-            where: { id, usuarioId },
-            attributes: ["id", "estado", "total", "metodoPago", "createdAt", "pagadaAt"],
-            include: [{
+            where: usuarioId === undefined ? { id } : { id, usuarioId },
+            attributes: ["id", "usuarioId", "estado", "total", "metodoPago", "createdAt", "pagadaAt"],
+            include: [{ model: User, attributes: ["id", "nombre", "correo"] }, {
                 model: CompraItem,
                 attributes: ["id", "productoId", "cantidad", "precioUnitario", "subtotal"],
                 include: [
