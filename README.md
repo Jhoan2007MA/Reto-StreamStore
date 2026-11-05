@@ -33,6 +33,12 @@ Para los correos llena `MAIL_USER` y `MAIL_PASS` con las credenciales SMTP de tu
 | `npm run type-check` | Verifica tipos sin compilar |
 | `npm run seed` | Carga los datos semilla (se puede correr varias veces sin duplicar) |
 
+## Documentación (Swagger)
+
+Con el servidor corriendo abre **http://localhost:3000/api/docs**. Ahí están todos los endpoints con sus cuerpos, filtros, códigos de respuesta y ejemplos, y se pueden probar con *Try it out*. Para las rutas protegidas haz login con `POST /auth/login`, copia el `accessToken` y pégalo en **Authorize**.
+
+El documento OpenAPI 3.1 está en `http://localhost:3000/api/docs.json` (se puede importar en Postman o Insomnia). Los cuerpos y filtros se generan desde los mismos esquemas Zod que validan las peticiones, así que no se desactualizan.
+
 ## Endpoints
 
 Base: `http://localhost:3000/api`
@@ -125,5 +131,6 @@ src/models/        tablas mapeadas con decoradores
 src/validators/    esquemas Zod
 src/middlewares/   auth, roles, validación, 404 y errores
 src/constants/     códigos de estado y roles
-src/utils/         respuestas, errores, paginación, logger y formatos
+src/utils/         respuestas, errores, paginación, logger, formatos, fechas, cifrado y correo
+src/docs/          especificación OpenAPI (Swagger)
 ```
