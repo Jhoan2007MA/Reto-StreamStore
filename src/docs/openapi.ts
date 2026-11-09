@@ -1,5 +1,5 @@
 import { z, ZodType } from "zod"
-import { loginSchema, recuperarContrasenaSchema, registerSchema, restablecerContrasenaSchema } from "../validators/AuthValidators"
+import { loginSchema, recuperarContrasenaSchema, reenviarCodigoSchema, registerSchema, restablecerContrasenaSchema, verificarCorreoSchema } from "../validators/AuthValidators"
 import { createCarritoItemSchema, renovarCarritoItemSchema, updateCarritoItemSchema } from "../validators/carritoItems/CarritoItemValidators"
 import { estadoSchema } from "../validators/CommonValidators"
 import { listCompraAdminQuerySchema, listCompraQuerySchema, pagarCompraSchema } from "../validators/compras/CompraValidators"
@@ -92,8 +92,24 @@ const paths: Record<string, Record<string, Json>> = {
         post: op({
             tag: "Auth", summary: "Registrar cliente", acceso: "publico", body: registerSchema,
             example: { nombre: "Cliente Demo", correo: "demo@test.com", telefono: "+57 300 0000000", contrasena: "Clave1234" },
-            description: "Crea un usuario con rol Cliente y deja la sesión iniciada (cookies `accessToken` y `refreshToken`). Devuelve también el `accessToken`.",
-            responses: { 201: "Cuenta creada", 400: "Datos inválidos", 409: "Ya existe una cuenta con ese correo" }
+            description: "Crea un usuario con rol Cliente pendiente de verificación y envía un código de 6 dígitos al correo (vence en 15 minutos). No inicia sesión: la sesión se crea al verificar el correo en `POST /auth/verificar`.",
+            responses: { 201: "Cuenta creada, código enviado", 400: "Datos inválidos", 409: "Ya existe una cuenta con ese correo (si está pendiente de verificación, `data.verificado` es `false`)" }
+        })
+    },
+    "/auth/verificar": {
+        post: op({
+            tag: "Auth", summary: "Verificar correo con el código", acceso: "publico", body: verificarCorreoSchema,
+            example: { correo: "demo@test.com", codigo: "123456" },
+            description: "Valida el código enviado al correo, activa la cuenta y deja la sesión iniciada (cookies `accessToken` y `refreshToken`). Máximo 5 intentos por código.",
+            responses: { 200: "Correo verificado, sesión iniciada", 400: "Datos inválidos o código incorrecto / vencido", 403: "Usuario inactivo", 409: "La cuenta ya fue verificada" }
+        })
+    },
+    "/auth/reenviar-codigo": {
+        post: op({
+            tag: "Auth", summary: "Reenviar código de verificación", acceso: "publico", body: reenviarCodigoSchema,
+            example: { correo: "demo@test.com" },
+            description: "Siempre responde lo mismo, exista o no el correo. Invalida el código anterior. Máximo una solicitud por minuto por usuario.",
+            responses: { 200: "Si la cuenta está pendiente, se envió un nuevo código", 400: "Datos inválidos" }
         })
     },
     "/auth/login": {
@@ -101,7 +117,7 @@ const paths: Record<string, Record<string, Json>> = {
             tag: "Auth", summary: "Iniciar sesión", acceso: "publico", body: loginSchema,
             example: { correo: "cliente1@streamstore.com", contrasena: "Cliente123*" },
             description: "Devuelve el `accessToken` (JWT) y deja las cookies de sesión. Admin de la semilla: `admin@streamstore.com` / `Admin123*`.",
-            responses: { 200: "Sesión iniciada", 400: "Datos inválidos", 401: "Correo o contraseña incorrectos", 403: "Usuario inactivo" }
+            responses: { 200: "Sesión iniciada", 400: "Datos inválidos", 401: "Correo o contraseña incorrectos", 403: "Usuario inactivo o correo sin verificar (`data.verificado` es `false`)" }
         })
     },
     "/auth/refresh": {

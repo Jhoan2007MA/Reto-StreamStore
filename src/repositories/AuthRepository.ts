@@ -7,7 +7,7 @@ export class AuthRepository {
     findByCorreo(correo: string): Promise<User | null> {
         return User.findOne({
             where: { correo },
-            attributes: ["id", "nombre", "correo", "telefono", "contrasenaHash", "rolId", "estado"],
+            attributes: ["id", "nombre", "correo", "telefono", "contrasenaHash", "rolId", "estado", "verificadoAt"],
             include: [rolInclude]
         })
     }
@@ -24,11 +24,6 @@ export class AuthRepository {
             attributes: ["id", "nombre", "correo", "telefono", "rolId", "estado", "refreshToken"],
             include: [rolInclude]
         })
-    }
-
-    async existsByCorreo(correo: string): Promise<boolean> {
-        const count = await User.count({ where: { correo } })
-        return count > 0
     }
 
     async create(data: UserCreationAttributes): Promise<number> {

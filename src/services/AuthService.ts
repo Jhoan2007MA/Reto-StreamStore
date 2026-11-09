@@ -6,7 +6,8 @@ import { AuthUser, TokenPayload } from "../interfaces/User"
 import { User } from "../models/User"
 import { AuthRepository } from "../repositories/AuthRepository"
 import { HttpError } from "../utils/httpError"
-import { LoginInput, RegisterInput } from "../validators/AuthValidators"
+import { LoginInput, ReenviarCodigoInput, RegisterInput, VerificarCorreoInput } from "../validators/AuthValidators"
+import { VerificacionCorreoService } from "./verificacionesCorreo/VerificacionCorreoService"
 
 export interface AuthSession {
     accessToken: string
@@ -16,23 +17,36 @@ export interface AuthSession {
     user: AuthUser
 }
 
+export interface RegistroPendiente {
+    correo: string
+    verificado: boolean
+}
+
 const ACTIVO = 1
 
 export class AuthService {
-    constructor(private readonly repository: AuthRepository) {}
+    constructor(
+        private readonly repository: AuthRepository,
+        private readonly verificaciones: VerificacionCorreoService
+    ) {}
 
     async login(input: LoginInput): Promise<AuthSession> {
         const user = await this.repository.findByCorreo(input.correo)
         const valid = user ? await bcrypt.compare(input.contrasena, user.contrasenaHash) : false
         if (!user || !valid) throw new HttpError("Correo o contraseña incorrectos", 401)
         this.ensureActive(user)
+        if (!user.verificadoAt) {
+            throw new HttpError("Debes verificar tu correo antes de iniciar sesión", 403, { correo: user.correo, verificado: false })
+        }
         return this.createSession(user)
     }
 
-    async register(input: RegisterInput): Promise<AuthSession> {
-        if (await this.repository.existsByCorreo(input.correo)) {
-            throw new HttpError("Ya existe una cuenta con ese correo", 409)
+    async register(input: RegisterInput): Promise<RegistroPendiente> {
+        const existente = await this.repository.findByCorreo(input.correo)
+        if (existente && !existente.verificadoAt) {
+            throw new HttpError("Ya existe una cuenta pendiente de verificación con ese correo. Solicita un nuevo código", 409, { correo: existente.correo, verificado: false })
         }
+        if (existente) throw new HttpError("Ya existe una cuenta con ese correo", 409)
         const id = await this.repository.create({
             nombre: input.nombre,
             correo: input.correo,
@@ -40,9 +54,19 @@ export class AuthService {
             contrasenaHash: input.contrasena,
             rolId: ROLES.CLIENTE
         })
+        await this.verificaciones.enviar({ id, nombre: input.nombre, correo: input.correo })
+        return { correo: input.correo, verificado: false }
+    }
+
+    async verificar(input: VerificarCorreoInput): Promise<AuthSession> {
+        const id = await this.verificaciones.verificar(input)
         const user = await this.repository.findById(id)
-        if (!user) throw new HttpError("No se pudo crear la cuenta", 500)
+        if (!user) throw new HttpError("Usuario no encontrado", 404)
         return this.createSession(user)
+    }
+
+    reenviarCodigo(input: ReenviarCodigoInput): Promise<void> {
+        return this.verificaciones.reenviar(input)
     }
 
     async refresh(refreshToken: string | undefined): Promise<AuthSession> {

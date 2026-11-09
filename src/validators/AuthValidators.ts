@@ -29,7 +29,18 @@ export const restablecerContrasenaSchema = z.object({
     contrasena: contrasenaSchema
 })
 
+export const verificarCorreoSchema = z.object({
+    correo: correoSchema,
+    codigo: z.string().trim().regex(/^[0-9]{6}$/, "El código debe tener 6 dígitos")
+})
+
+export const reenviarCodigoSchema = z.object({
+    correo: correoSchema
+})
+
 export type LoginInput = z.infer<typeof loginSchema>
+export type VerificarCorreoInput = z.infer<typeof verificarCorreoSchema>
+export type ReenviarCodigoInput = z.infer<typeof reenviarCodigoSchema>
 export type RegisterInput = z.infer<typeof registerSchema>
 export type RecuperarContrasenaInput = z.infer<typeof recuperarContrasenaSchema>
 export type RestablecerContrasenaInput = z.infer<typeof restablecerContrasenaSchema>
