@@ -1,9 +1,15 @@
 import { NextFunction, Request, Response } from "express"
 import { AuthRepository } from "../repositories/AuthRepository"
+import { VerificacionCorreoRepository } from "../repositories/verificacionesCorreo/VerificacionCorreoRepository"
 import { AuthService } from "../services/AuthService"
+import { VerificacionCorreoService } from "../services/verificacionesCorreo/VerificacionCorreoService"
 import { ApiResponse } from "../utils/apiResponse"
+import { NodemailerMailer } from "../utils/mailer"
 
-const service = new AuthService(new AuthRepository())
+const service = new AuthService(
+    new AuthRepository(),
+    new VerificacionCorreoService(new VerificacionCorreoRepository(), new NodemailerMailer())
+)
 
 const getAccessToken = (req: Request): string | undefined => {
     const header = req.headers.authorization

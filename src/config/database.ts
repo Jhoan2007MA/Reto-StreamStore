@@ -12,6 +12,7 @@ import { RecuperacionContrasena } from "../models/RecuperacionContrasena"
 import { Rol } from "../models/Rol"
 import { Servicio } from "../models/Servicio"
 import { User } from "../models/User"
+import { VerificacionCorreo } from "../models/VerificacionCorreo"
 
 export const sequelize = new Sequelize({
     dialect: "mysql",
@@ -22,5 +23,5 @@ export const sequelize = new Sequelize({
     password: config.db.password,
     timezone: config.db.timezone,
     logging: false,
-    models: [Rol, User, Plataforma, Producto, Cuenta, Pantalla, CarritoItem, Compra, CompraItem, Servicio, Notificacion, RecuperacionContrasena]
+    models: [Rol, User, Plataforma, Producto, Cuenta, Pantalla, CarritoItem, Compra, CompraItem, Servicio, Notificacion, RecuperacionContrasena, VerificacionCorreo]
 })

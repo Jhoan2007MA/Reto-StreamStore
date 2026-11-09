@@ -11,6 +11,7 @@ export interface UserAttributes {
     contrasenaHash: string
     rolId: number
     estado: number
+    verificadoAt: Date | null
     refreshToken: string | null
     createdBy: number | null
     updatedBy: number | null
@@ -18,7 +19,7 @@ export interface UserAttributes {
     updatedAt: Date
 }
 
-export type UserCreationAttributes = Optional<UserAttributes, "id" | "telefono" | "estado" | "refreshToken" | "createdBy" | "updatedBy" | "createdAt" | "updatedAt">
+export type UserCreationAttributes = Optional<UserAttributes, "id" | "telefono" | "estado" | "verificadoAt" | "refreshToken" | "createdBy" | "updatedBy" | "createdAt" | "updatedAt">
 
 @Table({ tableName: "usuarios", timestamps: true })
 export class User extends Model<UserAttributes, UserCreationAttributes> {
@@ -44,6 +45,10 @@ export class User extends Model<UserAttributes, UserCreationAttributes> {
     @Comment("1 = activo, 0 = inactivo")
     @Column({ type: DataType.TINYINT, allowNull: false, defaultValue: 1 })
     estado!: number
+
+    @Comment("NULL mientras el correo no se haya verificado")
+    @Column({ type: DataType.DATE, allowNull: true })
+    verificadoAt!: Date | null
 
     @Column({ type: DataType.STRING(512), allowNull: true })
     refreshToken!: string | null

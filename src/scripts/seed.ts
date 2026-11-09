@@ -42,7 +42,7 @@ const seedClientes = async (): Promise<Map<string, number>> => {
     for (const cliente of clientes) {
         const [usuario] = await User.findOrCreate({
             where: { correo: cliente.correo },
-            defaults: { ...cliente, contrasenaHash: CONTRASENA_CLIENTES, rolId: ROLES.CLIENTE, ...auditoria }
+            defaults: { ...cliente, contrasenaHash: CONTRASENA_CLIENTES, rolId: ROLES.CLIENTE, verificadoAt: new Date(), ...auditoria }
         })
         ids.set(cliente.correo, usuario.id)
     }

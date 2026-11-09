@@ -1,11 +1,17 @@
 import { CookieOptions, Request, Response } from "express"
 import { config } from "../config/config"
 import { AuthRepository } from "../repositories/AuthRepository"
+import { VerificacionCorreoRepository } from "../repositories/verificacionesCorreo/VerificacionCorreoRepository"
 import { AuthService, AuthSession } from "../services/AuthService"
+import { VerificacionCorreoService } from "../services/verificacionesCorreo/VerificacionCorreoService"
 import { ApiResponse } from "../utils/apiResponse"
-import { LoginInput, RegisterInput } from "../validators/AuthValidators"
+import { NodemailerMailer } from "../utils/mailer"
+import { LoginInput, ReenviarCodigoInput, RegisterInput, VerificarCorreoInput } from "../validators/AuthValidators"
 
-const service = new AuthService(new AuthRepository())
+const service = new AuthService(
+    new AuthRepository(),
+    new VerificacionCorreoService(new VerificacionCorreoRepository(), new NodemailerMailer())
+)
 
 const ACCESS_COOKIE = "accessToken"
 const REFRESH_COOKIE = "refreshToken"
@@ -48,12 +54,30 @@ export class AuthController {
 
     static async register(req: Request, res: Response): Promise<Response> {
         try {
-            const session = await service.register(req.body as RegisterInput)
+            const registro = await service.register(req.body as RegisterInput)
+            return ApiResponse.created(res, "Cuenta creada. Te enviamos un código a tu correo para verificarla", registro)
+        } catch (error) {
+            return ApiResponse.error(res, error)
+        }
+    }
+
+    static async verificar(req: Request, res: Response): Promise<Response> {
+        try {
+            const session = await service.verificar(req.body as VerificarCorreoInput)
             setSessionCookies(res, session)
-            return ApiResponse.created(res, `Cuenta creada. Bienvenido, ${session.user.nombre}`, {
+            return ApiResponse.success(res, `Correo verificado. Bienvenido, ${session.user.nombre}`, {
                 accessToken: session.accessToken,
                 user: session.user
             })
+        } catch (error) {
+            return ApiResponse.error(res, error)
+        }
+    }
+
+    static async reenviarCodigo(req: Request, res: Response): Promise<Response> {
+        try {
+            await service.reenviarCodigo(req.body as ReenviarCodigoInput)
+            return ApiResponse.success(res, "Si la cuenta está pendiente de verificación, te enviamos un nuevo código")
         } catch (error) {
             return ApiResponse.error(res, error)
         }

@@ -45,6 +45,7 @@ export class RecuperacionContrasenaRepository {
 
             usuario.contrasenaHash = contrasena
             usuario.refreshToken = null
+            usuario.verificadoAt ??= ahora
             usuario.updatedBy = usuario.id
             await usuario.save({ transaction })
             await RecuperacionContrasena.update(
